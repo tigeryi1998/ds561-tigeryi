@@ -84,19 +84,21 @@ def read_blob(blob, outmatrix):
     for link in links:
         outmatrix[filename, int(link)] = 1
     
-    return outmatrix
+    # return outmatrix
 
 
 
 def read_blobs(blobs, outmatrix, num_blobs):
+    # for blob in blobs:
+    #     read_blob(blob, outmatrix)
+
     num_workers = os.cpu_count()*5
     with tqdm(total=num_blobs) as progress:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-
-            iterator = executor.map(read_blob, (blobs, outmatrix))
-            for item in iterator:
-                outmatrix = item
-                progress.update(1)
+       with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+            
+            futures = [executor.submit(read_blob, (blob, outmatrix) ) for blob in blobs]
+            for _ in concurrent.futures.as_completed(futures):
+                    progress.update(1)
                  
             
 
@@ -104,9 +106,9 @@ def read_blobs(blobs, outmatrix, num_blobs):
 def main():
     storage_client = storage.Client().create_anonymous_client()
     bucket = storage_client.bucket("ds561-tigeryi-hw2")
-    blobs = bucket.list_blobs(prefix="files")
-    num_blobs = sum(1 for blob in blobs)
+    num_blobs = sum(1 for _ in bucket.list_blobs(prefix="files"))
     outmatrix = np.zeros((num_blobs, num_blobs))
+    blobs = bucket.list_blobs(prefix="files")
 
     read_blobs(blobs, outmatrix, num_blobs)
     calc_stats(outmatrix)
