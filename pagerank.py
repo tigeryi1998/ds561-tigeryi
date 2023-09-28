@@ -38,7 +38,7 @@ def calc_stats(outmatrix):
     print("quintiles of incoming links:", in_quintiles)
 
 
-def pagerank(outmatrix, initial=0.15, tolerance=0.005):
+def pagerank(outmatrix):
     num_V = len(outmatrix)
     prev = np.zeros(num_V)
 
@@ -67,7 +67,7 @@ def pagerank(outmatrix, initial=0.15, tolerance=0.005):
 
 def top_pagerank(outmatrix):
     pr = pagerank(outmatrix)
-    top5 = sorted(range(len(pr)), key=lambda i: pr[i], reverse=True)[:5]
+    top5 = sorted(range(len(pr)), key=lambda x: pr[x], reverse=True)[:5]
     for i in top5:
         str_pr5 = "page " + str(i) + ": " + str(pr[i])
         print(str_pr5)
