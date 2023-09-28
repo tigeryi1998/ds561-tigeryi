@@ -4,7 +4,7 @@ from numpy import linalg as LA
 import os 
 import re 
 import concurrent.futures
-import tqdm
+from tqdm import tqdm
 
 
 
