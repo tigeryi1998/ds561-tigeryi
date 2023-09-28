@@ -5,12 +5,12 @@ Sicheng Yi
 U43188754
 
 
-1. Run the modified version of generate files, it will put all the html files in a folder called “files”
+Run the modified version of generate files, it will put all the html files in a folder called “files”
 
 python generate-content.py
 
 
-2. Run the page rank .py file in the cloud shell 
+Run the page rank .py file in the cloud shell 
 
 python pagerank.py
 
