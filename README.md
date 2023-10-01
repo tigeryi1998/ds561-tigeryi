@@ -6,7 +6,7 @@ U43188754
 
 
 
-Run the modified version of generate files, it will put all the html files in a folder called “files”
+Run the modified version of generate files, it will put all the html files in a folder called “files/”
 
 python generate-content.py
 
