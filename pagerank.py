@@ -106,9 +106,9 @@ def read_blobs(blobs, outmatrix, num_blobs):
 def main():
     storage_client = storage.Client().create_anonymous_client()
     bucket = storage_client.bucket("ds561-tigeryi-hw2")
-    num_blobs = sum(1 for _ in bucket.list_blobs(prefix="files"))
+    num_blobs = sum(1 for _ in bucket.list_blobs(prefix="files/"))
     outmatrix = np.zeros((num_blobs, num_blobs))
-    blobs = bucket.list_blobs(prefix="files")
+    blobs = bucket.list_blobs(prefix="files/")
 
     read_blobs(blobs, outmatrix, num_blobs)
     calc_stats(outmatrix)
