@@ -39,13 +39,14 @@ def calc_stats(outmatrix):
 
 
 def pagerank(outmatrix):
-    num_V = len(outmatrix)
+    err = 1.0 
+    num_V = (outmatrix.shape)[0]
     prev = np.zeros(num_V)
 
     ins = [np.where(outmatrix[:, i] == 1)[0] for i in range(num_V)]
     outs = [outmatrix[i].sum(axis=1) for i in ins]
 
-    while True:
+    while err > 0.005:
         current = prev.copy()
 
         offset = np.array([np.sum(current[ins[i]] / outs[i])for i in range(num_V)])
@@ -53,66 +54,60 @@ def pagerank(outmatrix):
         current = 0.15 + 0.85 * offset
 
         err = LA.norm(current - prev)
-        err = np.abs(err) 
+
+        # err = np.abs(err) 
 
         prev = current
-
-        if err < 0.005:
-            break
 
     prev = prev / np.sum(prev)
     return prev
 
 
 
-def top_pagerank(outmatrix):
-    pr = pagerank(outmatrix)
-    top5 = sorted(range(len(pr)), key=lambda x: pr[x], reverse=True)[:5]
-    for i in top5:
-        str_pr5 = "page " + str(i) + ": " + str(pr[i])
-        print(str_pr5)
-        
-
-
-def read_blob(blob, outmatrix):
-    filename = int(blob.name.split(".")[0].split("/")[1])
-
-    content = blob.download_as_string().decode("utf-8")
-    
-    links = re.findall(r'<a HREF="(\d+).html">', content)
-
-    for link in links:
-        outmatrix[filename, int(link)] = 1
-    
-    # return outmatrix
-
-
-
-def read_blobs(blobs, outmatrix, num_blobs):
-    # for blob in blobs:
-    #     read_blob(blob, outmatrix)
-
-    num_workers = os.cpu_count()*5
-    with tqdm(total=num_blobs) as progress:
-       with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-            
-            futures = [executor.submit(read_blob, (blob, outmatrix) ) for blob in blobs]
-            for _ in concurrent.futures.as_completed(futures):
-                    progress.update(1)
-                 
-            
-
-
 def main():
     storage_client = storage.Client().create_anonymous_client()
-    bucket = storage_client.bucket("ds561-tigeryi-hw2")
+    bucket = storage_client.bucket(bucket_name="ds561-tigeryi-hw2")
     num_blobs = sum(1 for _ in bucket.list_blobs(prefix="files/"))
+    
+    print("number of blobs: ", num_blobs)
+
     outmatrix = np.zeros((num_blobs, num_blobs))
     blobs = bucket.list_blobs(prefix="files/")
 
-    read_blobs(blobs, outmatrix, num_blobs)
+    def read_blob(blob):
+        filename = int(blob.name.split(".")[0].split("/")[1])
+
+        content = blob.download_as_string().decode("utf-8")
+    
+        links = re.findall(r'<a HREF="(\d+).html">', content)
+
+        for link in links:
+            outmatrix[filename, int(link)] = 1
+
+
+    def read_blobs():
+        # for blob in blobs:
+        #     read_blob(blob, outmatrix)
+
+        num_workers = os.cpu_count()*5
+        with tqdm(total=num_blobs) as progress:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+                futures = [executor.submit(read_blob, (blob) ) for blob in blobs]
+                for _ in concurrent.futures.as_completed(futures):
+                        progress.update(1)
+
+
+    def top_pr():
+        pr = pagerank(outmatrix)
+        top5 = sorted(range(len(pr)), key=lambda x: pr[x], reverse=True)[:5]
+        for i in top5:
+            str_pr5 = "page rank of page " + str(i) + ": " + str(pr[i])
+            print(str_pr5)
+
+
+    read_blobs() 
     calc_stats(outmatrix)
-    top_pagerank(outmatrix)
+    top_pr()  
 
 
 if __name__ == "__main__":
