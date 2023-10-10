@@ -76,7 +76,7 @@ def build_country_cidrs():
     for country in list_of_countries:
         # Select a number of CIDRs to associate with that country
         num_cidrs = random.randrange(1, 10)
-        cnt = 0;
+        cnt = 0
         country_cidrs = []
         while cnt < num_cidrs:
             next_cidr = random.randrange(1, 16000000)
