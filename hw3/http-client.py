@@ -157,7 +157,7 @@ def make_request(domain, port, country, ip, filename, use_ssl, ssl_context, foll
 def main():
     ssl_context = fix_certs()
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--domain", help="Domain to make requests to", type=str, default="www.python.org")
+    parser.add_argument("-d", "--domain", help="Domain to make requests to", type=str, default="https://python-http-function-cpiokcs5lq-ue.a.run.app")
     parser.add_argument("-b", "--bucket", help="Cloud bucket containing your files.  Use none if running local", type=str, default="ds561-tigeryi-hw2")
     parser.add_argument("-w", "--webdir", help="Directory containing your files.  Use none if you did not make one", type=str, default="files")
     parser.add_argument("-n", "--num_requests", help="Number of requests to make", type=int, default=100000)
