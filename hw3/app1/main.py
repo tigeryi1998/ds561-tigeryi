@@ -4,6 +4,10 @@ import flask
 from flask import abort
 from flask import request
 import curl 
+import http.client
+import os
+import time 
+import ssl 
 
 @functions_framework.http
 def hello_http(request):
@@ -22,12 +26,14 @@ def hello_http(request):
     filenum = filenum[0]
     filenum = int(filenum)
 
-    if request.method != "GET":
-      abort(501)
-    else:
+    if request.method == "GET":
       if filenum > 10000 or filenum < 0:
         abort(404)
       else:
-        return("200-OK") 
+        return("200-OK")
+    elif request.method == "PUT":
+      abort(501)
+    else:
+      abort(501)
 
 
