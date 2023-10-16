@@ -161,7 +161,7 @@ def main():
     parser.add_argument("-b", "--bucket", help="Cloud bucket containing your files.  Use none if running local", type=str, default="ds561-tigeryi-hw2")
     parser.add_argument("-w", "--webdir", help="Directory containing your files.  Use none if you did not make one", type=str, default="files")
     parser.add_argument("-n", "--num_requests", help="Number of requests to make", type=int, default=100000)
-    parser.add_argument("-i", "--index", help="Maximum existing file index", type=int, default=100000)
+    parser.add_argument("-i", "--index", help="Maximum existing file index", type=int, default=10000)
     parser.add_argument("-p", "--port", help="Server Port", type=int, default=80)
     parser.add_argument("-f", "--follow", help="Follow Redirects", action="store_true")
     parser.add_argument("-s", "--ssl", help="Use HTTPS", action="store_true")
