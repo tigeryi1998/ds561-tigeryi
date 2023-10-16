@@ -3,11 +3,11 @@ import re
 import flask
 from flask import abort
 from flask import request
-import curl 
-import http.client
-import os
-import time 
-import ssl 
+# import curl 
+# import http.client
+# import os
+# import time 
+# import ssl 
 
 @functions_framework.http
 def hello_http(request):
