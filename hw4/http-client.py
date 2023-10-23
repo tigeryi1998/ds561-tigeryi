@@ -4,7 +4,6 @@ import http.client
 from urllib.parse import urljoin
 import argparse
 import random
-
 import platform
 import os
 import ssl
@@ -150,7 +149,7 @@ def make_request(domain, port, country, ip, filename, use_ssl, ssl_context, foll
         location_header = res.getheader('location')
         if location_header is not None:
             filename = urljoin(filename, location_header)
-            make_request(domain, country, ip, filename, use_ssl, ssl_context, follow, verbose)
+            make_request(domain, port, country, ip, filename, use_ssl, ssl_context, follow, verbose)
     conn.close()
                  
         
@@ -168,9 +167,11 @@ def main():
     parser.add_argument("-v", "--verbose", help="Print the responses from the server on stdout", action="store_true")
     parser.add_argument("-r", "--random", help="Initial random seed", type=int, default=0)
     args = parser.parse_args()
-    build_country_cidrs()
+    
     if args.random != 0:
         random.seed(args.random)
+
+    build_country_cidrs()
 
     if args.bucket == 'none':
         args.bucket = ''
