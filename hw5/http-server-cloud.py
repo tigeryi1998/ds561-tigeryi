@@ -9,9 +9,10 @@ import os
 import sys
 import pymysql
 import socket, struct
-import sqlalchemy
 from google.cloud.sql.connector import Connector, IPTypes
-
+import sqlalchemy
+from sqlalchemy import text 
+from sqlalchemy import create_engine, MetaData, Table, Column, Numeric, Integer, VARCHAR 
 
 
 PROJECT_ID = "feisty-gasket-398719"
@@ -22,13 +23,12 @@ DB_NAME = "dbhw5"
 
 
 
+def create_tables():
 
+    # initialize Connector object
+    connector = Connector()
 
-# initialize Connector object
-connector = Connector()
-
-# function to return the database connection object
-def getconn():
+    # the database connection object
     conn = connector.connect(
         INSTANCE_CONNECTION_NAME,
         "pymysql",
@@ -36,35 +36,26 @@ def getconn():
         password=DB_PASS,
         db=DB_NAME
     )
-    return conn
-
-# create connection pool with 'creator' argument to our connection object function
-pool = sqlalchemy.create_engine(
-    "mysql+pymysql://",
-    creator=getconn,
-)
-
-
-
-def create_tables():
-
-    # initialize Connector object
-    connector = Connector()
-
+    
     # create connection pool with 'creator' argument to our connection object function
     pool = sqlalchemy.create_engine(
         "mysql+pymysql://",
-        creator=getconn,
+        creator=conn,
     )
 
     with pool.connect() as db_conn:
+        db_conn.execute(
+            sqlalchemy.text(
+                "CREATE TABLE IF NOT EXISTS table1 "
+                "(ip VARCHAR(255) NOT NULL, "
+                "time_of_day VARCHAR(255) NOT NULL, "
+                "filename VARCHAR(255), "
+                "PRIMARY KEY (ip));"
+            )
+        )
+        db_conn.commit()
 
-
-
-
-
-
-        connector.close()
+    connector.close()
 
     return None 
 
