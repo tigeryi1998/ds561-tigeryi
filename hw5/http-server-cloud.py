@@ -158,6 +158,45 @@ def fill_table3(ip, time_of_day, filename, error):
     connector.close()
 
 
+def fill_table2(ip, gender, age, income, country, is_banned):
+
+    # initialize Connector object
+    connector = Connector()
+
+    # the database connection object
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pymysql",
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME
+    )
+    
+    # create connection pool with 'creator' argument to our connection object function
+    pool = sqlalchemy.create_engine(
+        "mysql+pymysql://",
+        creator=conn,
+    )
+
+    # insert data into our ratings table
+    insert_stmt = sqlalchemy.text(
+        "INSERT INTO table1 (ip, gender, age, income, country, is_banned) VALUES (:ip, :gender, :age, :income, :country, :is_banned) ON DUPLICATE KEY UPDATE ip=ip",
+    )
+
+    with pool.connect() as db_conn:
+        db_conn.execute(insert_stmt, parameters={
+            "ip": ip, 
+            "gender": gender, 
+            "age": age,
+            "income": income,
+            "country": country,
+            "is_banned": is_banned
+            }
+        )
+        db_conn.commit()
+    connector.close()
+
+
 class MyServer(BaseHTTPRequestHandler):
 
     def publish_pub_sub(self, message):
@@ -188,9 +227,9 @@ class MyServer(BaseHTTPRequestHandler):
         bucket = parts[1]
         directory = parts[2]
         filename = parts[3]            
-        self.send_gcs_response(bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned)
+        self.send_gcs_response(bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned, country)
 
-    def send_gcs_response(self, bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned):
+    def send_gcs_response(self, bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned, country):
         receive_headers = self.headers
         try:
             storage_client = storage.Client()
@@ -212,8 +251,12 @@ class MyServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes("</body></html>", "utf-8"))
                 content = f.read()
                 self.wfile.write(bytes(content, "utf-8"))
+            
+            fill_table1(ip, time_of_day, filename)
+            fill_table2(ip, gender, age, income, country, is_banned)
+
         except:
-            fill_table3(ip, time_of_day, filename, 404)
+            
             self.send_response(404)
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -221,26 +264,66 @@ class MyServer(BaseHTTPRequestHandler):
             self.wfile.write(bytes("<p>Request: %s</p>" % self.path, "utf-8"))
             self.wfile.write(bytes("<body>", "utf-8"))
             self.wfile.write(bytes("<p>File not found.</p>", "utf-8"))
-            self.wfile.write(bytes("</body></html>", "utf-8"))                
+            self.wfile.write(bytes("</body></html>", "utf-8"))
+
+            fill_table3(ip, time_of_day, filename, 404)                
             
     def do_PUT(self):
-        self.send500error()
+        ip = self.headers['X-Client-IP']
+        time_of_day = self.headers['X-time']
+        bucket = None
+        directory = None
+        filename = None
+        parts = self.path.split('/')
+        bucket = parts[1]
+        directory = parts[2]
+        filename = parts[3]  
+        self.send500error(ip, time_of_day, filename)
 
     def do_POST(self):
-        self.send500error()
+        ip = self.headers['X-Client-IP']
+        time_of_day = self.headers['X-time']
+        bucket = None
+        directory = None
+        filename = None
+        parts = self.path.split('/')
+        bucket = parts[1]
+        directory = parts[2]
+        filename = parts[3]
+        self.send500error(ip, time_of_day, filename)
 
     def do_HEAD(self):
-        self.send500error()
+        ip = self.headers['X-Client-IP']
+        time_of_day = self.headers['X-time']
+        bucket = None
+        directory = None
+        filename = None
+        parts = self.path.split('/')
+        bucket = parts[1]
+        directory = parts[2]
+        filename = parts[3]
+        self.send500error(ip, time_of_day, filename)
 
     def do_DELETE(self):
-        self.send500error()
+        ip = self.headers['X-Client-IP']
+        time_of_day = self.headers['X-time']
+        bucket = None
+        directory = None
+        filename = None
+        parts = self.path.split('/')
+        bucket = parts[1]
+        directory = parts[2]
+        filename = parts[3]
+        self.send500error(ip, time_of_day, filename)
 
-    def send500error(self):
+    def send500error(self,ip, time_of_day, filename):
         # fill_table3(ip, time_of_day, filename, 500)
         self.send_response(500)
         self.end_headers()
         self.wfile.write(bytes("Server method unavailable", "utf-8"))
-                    
+        fill_table3(ip, time_of_day, filename, 500)
+
+                  
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--domain", help="Domain to make requests to", type=str, default="localhost")
