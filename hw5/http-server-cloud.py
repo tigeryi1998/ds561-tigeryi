@@ -50,15 +50,112 @@ def create_tables():
                 "(ip VARCHAR(255) NOT NULL, "
                 "time_of_day VARCHAR(255) NOT NULL, "
                 "filename VARCHAR(255), "
+                "PRIMARY KEY (ip, time_of_day));"
+            )
+        )
+        db_conn.commit()
+
+        db_conn.execute(
+            sqlalchemy.text(
+                "CREATE TABLE IF NOT EXISTS table2 "
+                "(ip VARCHAR(255) NOT NULL, "
+                "gender VARCHAR(255) NOT NULL, "
+                "age VARCHAR(255) NOT NULL, "
+                "income VARCHAR(255) NOT NULL, "
+                "country VARCHAR(255) NOT NULL, "
+                "is_banned BOOL NOT NULL, "
                 "PRIMARY KEY (ip));"
+            )
+        )
+        db_conn.commit()
+
+        db_conn.execute(
+            sqlalchemy.text(
+                "CREATE TABLE IF NOT EXISTS table1 "
+                "(ip VARCHAR(255) NOT NULL, "
+                "time_of_day VARCHAR(255) NOT NULL, "
+                "filename VARCHAR(255) NOT NULL, "
+                "error INT(225), "
+                "PRIMARY KEY (ip, time_of_day));"
             )
         )
         db_conn.commit()
 
     connector.close()
 
-    return None 
 
+def fill_table1(ip, time_of_day, filename):
+
+    # initialize Connector object
+    connector = Connector()
+
+    # the database connection object
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pymysql",
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME
+    )
+    
+    # create connection pool with 'creator' argument to our connection object function
+    pool = sqlalchemy.create_engine(
+        "mysql+pymysql://",
+        creator=conn,
+    )
+
+    # insert data into our ratings table
+    insert_stmt = sqlalchemy.text(
+        "INSERT INTO table1 (ip, time_of_day, filename) VALUES (:ip, :time_of_day, :filename)",
+    )
+
+    with pool.connect() as db_conn:
+        db_conn.execute(insert_stmt, parameters={
+            "ip": ip, 
+            "time_of_day": time_of_day, 
+            "filename": filename
+            }
+        )
+        db_conn.commit()
+    connector.close()
+
+
+
+def fill_table3(ip, time_of_day, filename, error):
+
+    # initialize Connector object
+    connector = Connector()
+
+    # the database connection object
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pymysql",
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME
+    )
+    
+    # create connection pool with 'creator' argument to our connection object function
+    pool = sqlalchemy.create_engine(
+        "mysql+pymysql://",
+        creator=conn,
+    )
+
+    # insert data into our ratings table
+    insert_stmt = sqlalchemy.text(
+        "INSERT INTO table1 (ip, time_of_day, filename, error) VALUES (:ip, :time_of_day, :filename, :error)",
+    )
+
+    with pool.connect() as db_conn:
+        db_conn.execute(insert_stmt, parameters={
+            "ip": ip, 
+            "time_of_day": time_of_day, 
+            "filename": filename,
+            "error": error
+            }
+        )
+        db_conn.commit()
+    connector.close()
 
 
 class MyServer(BaseHTTPRequestHandler):
@@ -75,10 +172,10 @@ class MyServer(BaseHTTPRequestHandler):
     
     def do_GET(self):
         country = self.headers['X-Country']
-        is_banned = False
+        is_banned = True
         if country in ['North Korea', 'Iran', 'Cuba', 'Myanmar', 'Iraq', 'Libya', 'Sudan', 'Zimbabwe', 'Syria']:
-            publish_pub_sub('Banned country ' + country)
-            is_banned = True
+            self.publish_pub_sub('Banned country ' + country)
+            is_banned = False
         ip = self.headers['X-Client-IP']
         gender = self.headers['X-gender']
         age = self.headers['X-age']
@@ -91,9 +188,9 @@ class MyServer(BaseHTTPRequestHandler):
         bucket = parts[1]
         directory = parts[2]
         filename = parts[3]            
-        self.send_gcs_response(bucket, directory, filename)
+        self.send_gcs_response(bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned)
 
-    def send_gcs_response(self, bucket, directory, filename):
+    def send_gcs_response(self, bucket, directory, filename, ip, gender, age, income, time_of_day, is_banned):
         receive_headers = self.headers
         try:
             storage_client = storage.Client()
@@ -116,6 +213,7 @@ class MyServer(BaseHTTPRequestHandler):
                 content = f.read()
                 self.wfile.write(bytes(content, "utf-8"))
         except:
+            fill_table3(ip, time_of_day, filename, 404)
             self.send_response(404)
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -138,6 +236,7 @@ class MyServer(BaseHTTPRequestHandler):
         self.send500error()
 
     def send500error(self):
+        # fill_table3(ip, time_of_day, filename, 500)
         self.send_response(500)
         self.end_headers()
         self.wfile.write(bytes("Server method unavailable", "utf-8"))
@@ -147,6 +246,8 @@ def main():
     parser.add_argument("-d", "--domain", help="Domain to make requests to", type=str, default="localhost")
     parser.add_argument("-p", "--port", help="Server Port", type=int, default=8080)
     args = parser.parse_args()
+
+    create_tables()
     
     webServer = HTTPServer((args.domain, args.port), MyServer)
     print("Server started http://%s:%s" % (args.domain, args.port))
