@@ -168,3 +168,10 @@ files/
 # txt files
 *.txt 
 
+# tar files
+*.tar 
+
+simple_http_server.py 
+
+SimpleRequestHandler.py 
+

@@ -5,14 +5,78 @@ import argparse
 import time
 import google.cloud.storage as storage
 import google.cloud.pubsub as pubsub
+import os 
+import sys
+import pymysql
+import socket, struct
+import sqlalchemy
+from google.cloud.sql.connector import Connector, IPTypes
+
+
+
+PROJECT_ID = "feisty-gasket-398719"
+INSTANCE_CONNECTION_NAME = "feisty-gasket-398719:us-east1:instance-tigeryi"
+DB_USER = "root"
+DB_PASS = ""
+DB_NAME = "dbhw5"
+
+
+
+
+
+# initialize Connector object
+connector = Connector()
+
+# function to return the database connection object
+def getconn():
+    conn = connector.connect(
+        INSTANCE_CONNECTION_NAME,
+        "pymysql",
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME
+    )
+    return conn
+
+# create connection pool with 'creator' argument to our connection object function
+pool = sqlalchemy.create_engine(
+    "mysql+pymysql://",
+    creator=getconn,
+)
+
+
+
+def create_tables():
+
+    # initialize Connector object
+    connector = Connector()
+
+    # create connection pool with 'creator' argument to our connection object function
+    pool = sqlalchemy.create_engine(
+        "mysql+pymysql://",
+        creator=getconn,
+    )
+
+    with pool.connect() as db_conn:
+
+
+
+
+
+
+        connector.close()
+
+    return None 
+
 
 
 class MyServer(BaseHTTPRequestHandler):
 
     def publish_pub_sub(self, message):
-        project_id = 'cloudcomputingcourse-380619'
-        topic_id = project_id + '-mytopic'
+        project_id = 'feisty-gasket-398719'
+        topic_id = project_id + 'my-topic'
         publisher = pubsub.PublisherClient()
+        # in the form `projects/{project_id}/topics/{topic_id}`
         topic_path = publisher.topic_path(project_id, topic_id)
         data = message.encode('utf-8')
         future = publisher.publish(topic_path, data)
@@ -20,9 +84,15 @@ class MyServer(BaseHTTPRequestHandler):
     
     def do_GET(self):
         country = self.headers['X-Country']
+        is_banned = False
         if country in ['North Korea', 'Iran', 'Cuba', 'Myanmar', 'Iraq', 'Libya', 'Sudan', 'Zimbabwe', 'Syria']:
             publish_pub_sub('Banned country ' + country)
+            is_banned = True
         ip = self.headers['X-Client-IP']
+        gender = self.headers['X-gender']
+        age = self.headers['X-age']
+        income = self.headers['X-income']
+        time_of_day = self.headers['X-time']
         bucket = None
         directory = None
         filename = None
