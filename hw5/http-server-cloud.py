@@ -48,7 +48,7 @@ def create_tables():
             sqlalchemy.text(
                 "CREATE TABLE IF NOT EXISTS table1 "
                 "(ip VARCHAR(255) NOT NULL, "
-                "time_of_day VARCHAR(255) NOT NULL, "
+                "time_of_day DATETIME NOT NULL, "
                 "filename VARCHAR(255), "
                 "PRIMARY KEY (ip, time_of_day));"
             )
@@ -73,7 +73,7 @@ def create_tables():
             sqlalchemy.text(
                 "CREATE TABLE IF NOT EXISTS table1 "
                 "(ip VARCHAR(255) NOT NULL, "
-                "time_of_day VARCHAR(255) NOT NULL, "
+                "time_of_day DATETIME NOT NULL, "
                 "filename VARCHAR(255) NOT NULL, "
                 "error INT(225), "
                 "PRIMARY KEY (ip, time_of_day));"

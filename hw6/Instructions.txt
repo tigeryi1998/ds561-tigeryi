@@ -1,0 +1,104 @@
+
+First create a cloud sql instance:  https://cloud.google.com/sql/docs/mysql/create-instance
+
+Make sure you have cloud sql admin and compute viewer roles enabled
+(https://console.cloud.google.com/iam-admin)
+
+Now let's create a database:
+Id: MySql-CDS-BU
+Password: NI=V>Iioaup+"EzL
+
+Pick region:  us-east1 to align with everything else
+
+Zone availability:  Single zone (we want to save money)
+
+Configuration:  Make it Development configuration:  2CPU, 8GB of memory, 100GB of storage.  Autogrow as needed.
+
+Or alternatively:
+
+gcloud sql instances create INSTANCE_NAME \
+--database-version=MYSQL_8_0 \
+--cpu=NUMBER_CPUS \
+--memory=MEMORY_SIZE \
+--region=REGION
+
+
+
+So now we have a database machine but not an actual database.  We need one of those:
+https://cloud.google.com/sql/docs/mysql/create-manage-databases   
+
+So click on create database:
+or
+gcloud sql databases create DATABASE_NAME \
+--instance=INSTANCE_NAME \
+[--charset=CHARSET] \
+[--collation=COLLATION]
+
+Now we need a table to hold our request data:
+
+country: VARCHAR(128)
+ip: INTEGER UNSIGNED or VARCHAR (if integer will need to do conversions using INET_ATON and INET_NTOA)
+gender: SMALLINT
+age: SMALLINT
+income: INTEGER
+timeofday: DATETIME
+
+Do we need any indices on this data?  (possibly country, gender, age, and income) if we want fast queries across those axis.
+
+Let's connect to our database and make a table
+
+gcloud sql connect mysql-cds-bu --user=root --quiet (may take a little while).
+in the mysql prompt
+show databases;
+create database cdsbu;
+use cdsbu;  # Or whatever your database is called
+
+Then create the table:
+
+create table accesslogs (country varchar(64), ip integer unsigned, gender smallint, age varchar(16), income varchar(32), timeofday datetime, index (country, gender, age, income));
+
+exit the database.
+
+You may want to create new users with more limited capabilities (the default user can do whatever they want in the database).  But that is an exercise for
+some other time.
+
+To access your database from a VM instance you will have to first:
+
+Create a service account that will have the following properties:
+Cloud SQL Client, Cloud SQL Admin, Storage Object Viewer and Storage Object Admin
+Then create a VM instance and associate this service account with it.
+Finally enable http access and port 8080 access for that instance.
+
+If your cloud cli fails with openssl/crypto problems (mine has on occasion after installing pip) then reinstall it using:
+sudo apt-get update && sudo apt-get install google-cloud-cli
+
+We will likely need to install mysql on this machine, not for the database itself but for the client that comes with it.
+Fetch the tar file from https://dev.mysql.com/downloads/mysql/
+The follow the instructions in https://dev.mysql.com/doc/refman/5.7/en/linux-installation-debian.html
+In particular:
+tar -xvf mysql-server_XXXXXXX.deb-bundle.tar
+sudo apt-get install libaio1
+sudo dpkg-preconfigure mysql-community-server_*.deb
+sudo dpkg -i mysql*.deb
+sudo apt-get -f install
+Ignore any errors (the client installation works fine)
+
+We will use cloud SQL connectors.  They exist for Python, Java and Go.
+
+You will need to install all the relevant dependencies:
+pip3 install pymysql
+pip3 install sqlalchemy
+pip3 install pandas
+pip3 install "cloud-sql-python-connector[pymysql]"
+pip3 install google-cloud-pubsub
+pip3 install google-cloud-storage
+
+For coding against the connector see here:
+https://github.com/GoogleCloudPlatform/cloud-sql-python-connector/blob/main/README.md
+
+Before running the code make sure you set the relevant environment variables:
+export PROJECT_ID=cloudcomputingcourse-380619
+export DB_USER=root
+export DB_PASS=NI=V\>Iioaup+\"EzL
+export DB_NAME=cdsbu
+export INSTANCE_CONNECTION_NAME=$PROJECT_ID\:us-east1:mysql-cds-bu
