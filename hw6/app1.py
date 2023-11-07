@@ -11,8 +11,8 @@ app = Flask(__name__)
 
 logging.basicConfig(filename='app1.log', filemode='w', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-PROJECT_ID = 'ds561-398719'
-TOPIC_NAME = 'error-topic'
+PROJECT_ID = "feisty-gasket-398719"
+TOPIC_NAME = "my-topic"
 BANNED_COUNTRIES = ["North Korea", "Iran", "Cuba", "Myanmar", "Iraq", "Libya", "Sudan", "Zimbabwe", "Syria"]
 
 #PubSub and Storage

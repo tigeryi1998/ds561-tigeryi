@@ -1,9 +1,9 @@
 from google.cloud import pubsub_v1
 import time
 
-PROJECT_ID = 'ds561-398719'
-SUBSCRIPTION_NAME = 'error-subscription'
-TOPIC_NAME = 'error-topic'
+PROJECT_ID = "feisty-gasket-398719"
+SUBSCRIPTION_NAME = "my-topic-sub"
+TOPIC_NAME = "my-topic"
 
 def callback(message):
     print(f"Received error message: {message.data.decode('utf-8')}")

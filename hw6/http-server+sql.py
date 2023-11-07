@@ -18,12 +18,14 @@ import sqlalchemy
 
 PROJECT_ID = "feisty-gasket-398719"
 TOPIC_ID = "my-topic"
+SUBSCRIPTION_NAME = "my-topic-sub"
 INSTANCE_CONNECTION_NAME = "feisty-gasket-398719:us-east1:instance-tigeryi"
 DB_USER = "root"
 DB_PASS = ""
 DB_NAME = "dbhw5"
 DB_PRIVATE_IP = False
 BANNED_COUNTRIES = ["North Korea", "Iran", "Cuba", "Myanmar", "Iraq", "Libya", "Sudan", "Zimbabwe", "Syria"]
+HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 
 
@@ -67,19 +69,19 @@ class MySqlServer():
         )
         return self.pool
 
-    def create_table1(self):
+    def create_table1(self): # NOT NULL UNIQUE
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table1(\
             ip INT NOT NULL UNIQUE, \
-            time_of_day DATATIME NOT NULL UNIQUE, \
+            time_of_day DATETIME NOT NULL UNIQUE, \
             filename VARCHAR(255), \
             PRIMARY KEY (ip, time_of_day));\
             """
         )
         with self.pool.connect() as db_conn:
             db_conn.execute(create_stmt)
-            db_conn.commit()
+            # db_conn.commit()
 
     def create_table2(self):
         create_stmt = sqlalchemy.text(
@@ -97,14 +99,14 @@ class MySqlServer():
         )
         with self.pool.connect() as db_conn:
             db_conn.execute(create_stmt)
-            db_conn.commit()
+            # db_conn.commit()
 
     def create_table3(self):
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table3(\
             ip INT NOT NULL UNIQUE, \
-            time_of_day DATATIME NOT NULL UNIQUE, \
+            time_of_day DATETIME NOT NULL UNIQUE, \
             filename VARCHAR(255), \
             error INT, \
             PRIMARY KEY (ip, time_of_day));\
@@ -112,7 +114,7 @@ class MySqlServer():
         )
         with self.pool.connect() as db_conn:
             db_conn.execute(create_stmt)
-            db_conn.commit()
+            # db_conn.commit()
 
 #    def insert_db(self, contents):
 #        insert_stmt = sqlalchemy.text(
@@ -380,7 +382,9 @@ def main():
 
     sqlserver= MySqlServer()
     sqlserver.pool = sqlserver.connect_with_connector()
-    sqlserver.create_table()
+    sqlserver.create_table1()
+    sqlserver.create_table2()
+    sqlserver.create_table3()
     MyServer.sqlserver = sqlserver
     
     webServer = HTTPServer((args.domain, args.port), MyServer)
