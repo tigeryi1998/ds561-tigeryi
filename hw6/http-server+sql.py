@@ -388,7 +388,7 @@ def main():
     MyServer.sqlserver = sqlserver
     
     webServer = HTTPServer((args.domain, args.port), MyServer)
-    print("Server started http://%s:%s:%s" % (args.domain, args.port,args.local))
+    print("Server started http://%s:%s" % (args.domain, args.port)) # http://%s:%s:%s # ,args.local
 
     try:
         webServer.serve_forever()
