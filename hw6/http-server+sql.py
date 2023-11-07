@@ -88,7 +88,7 @@ class MySqlServer():
             """\
             CREATE TABLE IF NOT EXISTS table2(\
             ip INT NOT NULL UNIQUE, \
-            gender SMALLINT, \
+            gender INT, \
             age VARCHAR(255), \
             income VARCHAR(255), \
             country VARCHAR(255), \
