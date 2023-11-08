@@ -14,6 +14,7 @@ import pymysql
 import socket, struct
 import sqlalchemy
 
+import numpy as np
 
 
 PROJECT_ID = "feisty-gasket-398719"
@@ -28,6 +29,51 @@ BANNED_COUNTRIES = ["North Korea", "Iran", "Cuba", "Myanmar", "Iraq", "Libya", "
 HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 
+list_of_countries = np.array([ 'Afghanistan', 'Albania', 'Algeria', 'Andorra',
+                      'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia',
+                      'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain',
+                      'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin',
+                      'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana',
+                      'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde',
+                      'Cambodia', 'Cameroon', 'Canada', 'Central African Republic',
+                      'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+                      'Congo, Democratic Republic of the', 'Congo, Republic of the',
+                      'Costa Rica', 'Cote dIvoire', 'Croatia', 'Cuba', 'Cyprus',
+                      'Czechia', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+                      'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea',
+                      'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland',
+                      'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana',
+                      'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau',
+                      'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India',
+                      'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
+                      'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati',
+                      'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon',
+                      'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania',
+                      'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives',
+                      'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius',
+                      'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia',
+                      'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia',
+                      'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua',
+                      'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway',
+                      'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama',
+                      'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+                      'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis',
+                      'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa',
+                      'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal',
+                      'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia',
+                      'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea',
+                      'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname',
+                      'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan',
+                      'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga',
+                      'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+                      'Uganda', 'Ukraine', 'United Arab Emirates (UAE)', 'United Kingdom',
+                      'United States of America (USA)', 'Uruguay', 'Uzbekistan',
+                      'Vanuatu', 'Vatican City (Holy See)', 'Venezuela', 'Vietnam',
+                      'Yemen', 'Zambia', 'Zimbabwe' ])
+list_of_genders = np.array(['Male', 'Female']) 
+list_of_ages = np.array(['0-16', '17-25', '26-35', '36-45', '46-55', '56-65', '66-75', '76+'])
+list_of_incomes =  np.array(['0-10k', '10k-20k', '20k-40k', '40k-60k', '60k-100k', '100k-150k', '150k-250k', '250k+']
+)
 
 class MySqlServer():
     pool = None
@@ -73,10 +119,12 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table1(\
-            ip VARCHAR(255) NOT NULL UNIQUE, \
-            time_of_day DATETIME NOT NULL UNIQUE, \
+            request_id INT AUTO_INCREMENT, \
+            ip VARCHAR(255), \
+            time_of_day DATETIME, \
             filename VARCHAR(255), \
-            PRIMARY KEY (ip, time_of_day));\
+            ip2 INT UNSIGNED, \
+            PRIMARY KEY (request_id));\
             """
         )
         with self.pool.connect() as db_conn:
@@ -87,14 +135,20 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table2(\
+            ip_id INT AUTO_INCREMENT, \
             ip VARCHAR(255) NOT NULL UNIQUE, \
             gender VARCHAR(255), \
             age VARCHAR(255), \
             income VARCHAR(255), \
             country VARCHAR(255), \
             is_banned BOOLEAN, \
-            index (country, gender, age, income), \
-            PRIMARY KEY (ip));\
+            ip2 INT UNSIGNED, \
+            gender2 INT, \
+            age2 INT, \
+            income2 INT, \
+            country2 INT, \
+            index (gender2, age2, income2, country2), \
+            PRIMARY KEY (ip_id,ip));\
             """
         )
         with self.pool.connect() as db_conn:
@@ -105,11 +159,13 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table3(\
-            ip VARCHAR(255) NOT NULL UNIQUE, \
-            time_of_day DATETIME NOT NULL UNIQUE, \
+            failed_id INT AUTO_INCREMENT, \
+            ip VARCHAR(255), \
+            time_of_day DATETIME, \
             filename VARCHAR(255), \
             error INT, \
-            PRIMARY KEY (ip, time_of_day));\
+            ip2 INT UNSIGNED, \
+            PRIMARY KEY (failed_id));\
             """
         )
         with self.pool.connect() as db_conn:
@@ -146,7 +202,7 @@ class MySqlServer():
 
     def insert_table3(self, contents):
         insert_stmt = sqlalchemy.text(
-            "INSERT INTO table1 (ip, time_of_day, filename, error) \
+            "INSERT INTO table3 (ip, time_of_day, filename, error) \
             VALUES (:ip, :time_of_day, :filename, :error)",
         )
         with self.pool.connect() as db_conn:
@@ -195,7 +251,7 @@ class MyServer(BaseHTTPRequestHandler):
     
     def do_GET(self):
         country = self.headers['X-Country']
-        if country in ['North Korea', 'Iran', 'Cuba', 'Myanmar', 'Iraq', 'Libya', 'Sudan', 'Zimbabwe', 'Syria']:
+        if country in BANNED_COUNTRIES:
             if not self.use_local_filesystem:
                 pass
                 #publish_pub_sub('Banned country ' + country)
@@ -223,13 +279,35 @@ class MyServer(BaseHTTPRequestHandler):
             contents[key] = receive_headers[header]
         
         # Fix the ip so it is a number instead of a string
-        # contents['ip'] = self.sqlserver.ip2long(contents['ip'])
+        contents['ip2'] = self.sqlserver.ip2long(contents['ip'])
 
-        # contents['gender'] = (0 if contents['gender'] == 'Male' else 1)
-
+        ip = receive_headers['X-client-IP']
+        gender = receive_headers['X-gender']
+        age = receive_headers['X-age']
+        income = receive_headers['X-income']
         country = receive_headers['X-Country']
         contents['is_banned'] = (1 if country in BANNED_COUNTRIES else 0)
+
+        if country in list_of_countries:
+            country2 = np.where(list_of_countries == country)[0][0]
+            contents['country2'] = country2
+
+        if gender in list_of_genders:
+            gender2 = np.where(list_of_genders == gender)[0][0]
+            contents['gender2'] = gender2
+
+        if age in list_of_ages:
+            age2 = np.where(list_of_ages == age)[0][0]
+            contents['age2'] = age2
+
+        if income in list_of_incomes:
+            income2 = np.where(list_of_incomes == income)[0][0]
+            contents['income2'] = income2
+
         self.sqlserver.insert_table2(contents)
+
+
+        # table 1, 3
 
         contents2 = {}
         headernames2 = ['X-client-IP', 'X-time']
@@ -238,7 +316,7 @@ class MyServer(BaseHTTPRequestHandler):
             contents2[key2] = receive_headers[header2]
         
         # Fix the ip so it is a number instead of a string
-        # contents2['ip'] = self.sqlserver.ip2long(contents['ip'])
+        contents2['ip2'] = self.sqlserver.ip2long(contents['ip'])
 
         contents2['filename'] = filename
         if error==None:
