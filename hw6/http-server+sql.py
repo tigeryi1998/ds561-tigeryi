@@ -172,19 +172,10 @@ class MySqlServer():
             db_conn.execute(create_stmt)
             # db_conn.commit()
 
-#    def insert_db(self, contents):
-#        insert_stmt = sqlalchemy.text(
-#            "INSERT INTO accesslogs (country, ip, gender, age, income, timeofday)\
-#            VALUES (:country, :ip, :gender, :age, :income, :timeofday)",
-#        )
-#        with self.pool.connect() as db_conn:
-#            db_conn.execute(insert_stmt, parameters=contents)
-#            db_conn.commit()
-
     def insert_table1(self, contents):
         insert_stmt = sqlalchemy.text(
-            "INSERT INTO table1 (ip, time_of_day, filename) \
-            VALUES (:ip, :time_of_day, :filename)",
+            "INSERT INTO table1 (ip, time_of_day, filename, ip2) \
+            VALUES (:ip, :time_of_day, :filename, :ip2)",
         )
         with self.pool.connect() as db_conn:
             db_conn.execute(insert_stmt, contents) # parameters=
@@ -192,8 +183,8 @@ class MySqlServer():
 
     def insert_table2(self, contents):
         insert_stmt = sqlalchemy.text(
-            "INSERT INTO table2 (ip, gender, age, income, country, is_banned) \
-            VALUES (:ip, :gender, :age, :income, :country, :is_banned) \
+            "INSERT INTO table2 (ip, gender, age, income, country, is_banned, ip2, gender2, age2, income2, country2) \
+            VALUES (:ip, :gender, :age, :income, :country, :is_banned, :ip2, :gender2, :age2, :income2, :country2) \
             ON DUPLICATE KEY UPDATE ip=ip",
         )
         with self.pool.connect() as db_conn:
@@ -202,8 +193,8 @@ class MySqlServer():
 
     def insert_table3(self, contents):
         insert_stmt = sqlalchemy.text(
-            "INSERT INTO table3 (ip, time_of_day, filename, error) \
-            VALUES (:ip, :time_of_day, :filename, :error)",
+            "INSERT INTO table3 (ip, time_of_day, filename, error, ip2) \
+            VALUES (:ip, :time_of_day, :filename, :error, :ip2)",
         )
         with self.pool.connect() as db_conn:
             db_conn.execute(insert_stmt, contents) # parameters=
