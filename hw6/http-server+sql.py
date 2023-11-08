@@ -73,7 +73,7 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table1(\
-            ip INT NOT NULL UNIQUE, \
+            ip VARCHAR(255) NOT NULL UNIQUE, \
             time_of_day DATETIME NOT NULL UNIQUE, \
             filename VARCHAR(255), \
             PRIMARY KEY (ip, time_of_day));\
@@ -87,8 +87,8 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table2(\
-            ip INT NOT NULL UNIQUE, \
-            gender INT, \
+            ip VARCHAR(255) NOT NULL UNIQUE, \
+            gender VARCHAR(255), \
             age VARCHAR(255), \
             income VARCHAR(255), \
             country VARCHAR(255), \
@@ -105,7 +105,7 @@ class MySqlServer():
         create_stmt = sqlalchemy.text(
             """\
             CREATE TABLE IF NOT EXISTS table3(\
-            ip INT NOT NULL UNIQUE, \
+            ip VARCHAR(255) NOT NULL UNIQUE, \
             time_of_day DATETIME NOT NULL UNIQUE, \
             filename VARCHAR(255), \
             error INT, \
@@ -131,8 +131,8 @@ class MySqlServer():
             VALUES (:ip, :time_of_day, :filename)",
         )
         with self.pool.connect() as db_conn:
-            db_conn.execute(insert_stmt, parameters=contents)
-            db_conn.commit()
+            db_conn.execute(insert_stmt, contents) # parameters=
+            # db_conn.commit()
 
     def insert_table2(self, contents):
         insert_stmt = sqlalchemy.text(
@@ -141,8 +141,8 @@ class MySqlServer():
             ON DUPLICATE KEY UPDATE ip=ip",
         )
         with self.pool.connect() as db_conn:
-            db_conn.execute(insert_stmt, parameters=contents)
-            db_conn.commit()
+            db_conn.execute(insert_stmt, contents) #parameters=
+            # db_conn.commit()
 
     def insert_table3(self, contents):
         insert_stmt = sqlalchemy.text(
@@ -150,8 +150,8 @@ class MySqlServer():
             VALUES (:ip, :time_of_day, :filename, :error)",
         )
         with self.pool.connect() as db_conn:
-            db_conn.execute(insert_stmt, parameters=contents)
-            db_conn.commit()
+            db_conn.execute(insert_stmt, contents) # parameters=
+            # db_conn.commit()
 
     def retrieve_table1(self):
         query_stmt = sqlalchemy.text("SELECT * from table1")
@@ -173,7 +173,8 @@ class MySqlServer():
 
     def ip2long(self, ip):
         packedIP = socket.inet_aton(ip)
-        return struct.unpack('!L', packedIP)[0]
+        result = struct.unpack('!L', packedIP)[0]
+        return int(result)
     
     def long2ip(self, long):
         return socket.inet_ntoa(struct.pack('!L', long))
@@ -220,9 +221,12 @@ class MyServer(BaseHTTPRequestHandler):
         fieldnames = ['ip', 'gender', 'age', 'income', 'country']
         for key,header in zip(fieldnames,headernames):
             contents[key] = receive_headers[header]
+        
         # Fix the ip so it is a number instead of a string
-        contents['ip'] = self.sqlserver.ip2long(contents['ip'])
-        contents['gender'] = (0 if contents['gender'] == 'Male' else 1)
+        # contents['ip'] = self.sqlserver.ip2long(contents['ip'])
+
+        # contents['gender'] = (0 if contents['gender'] == 'Male' else 1)
+
         country = receive_headers['X-Country']
         contents['is_banned'] = (1 if country in BANNED_COUNTRIES else 0)
         self.sqlserver.insert_table2(contents)
@@ -232,8 +236,10 @@ class MyServer(BaseHTTPRequestHandler):
         fieldnames2 = ['ip', 'time_of_day']
         for key2,header2 in zip(fieldnames2,headernames2):
             contents2[key2] = receive_headers[header2]
+        
         # Fix the ip so it is a number instead of a string
-        contents['ip'] = self.sqlserver.ip2long(contents['ip'])
+        # contents2['ip'] = self.sqlserver.ip2long(contents['ip'])
+
         contents2['filename'] = filename
         if error==None:
             self.sqlserver.insert_table1(contents2)
@@ -281,6 +287,10 @@ class MyServer(BaseHTTPRequestHandler):
             
     def send_local_response(self, path):
         receive_headers = self.headers
+        parts = path.split('/')
+        bucket = parts[0]
+        directory = parts[1]
+        filename = parts[2]
         try:
             with open(path, "r") as f:
                 self.send_response(200)
@@ -296,6 +306,8 @@ class MyServer(BaseHTTPRequestHandler):
                 self.wfile.write(bytes("</body></html>", "utf-8"))
                 content = f.read()
                 self.wfile.write(bytes(content, "utf-8"))
+            # Write a log of the request into the database
+            self.writeintodb(receive_headers, filename, error=None)
         except:
             self.send_response(404)
             self.send_header("Content-type", "text/html")
@@ -305,14 +317,19 @@ class MyServer(BaseHTTPRequestHandler):
             self.wfile.write(bytes("<body>", "utf-8"))
             self.wfile.write(bytes("<p>File not found.</p>", "utf-8"))
             self.wfile.write(bytes("</body></html>", "utf-8"))
+            # Write a log of the request into the database
+            self.writeintodb(receive_headers, filename, error=404)
 
     def do_PUT(self):
         bucket = None
         directory = None
         filename = None
         if self.use_local_filesystem:
-            filename = "." + self.path
-            self.send_local_response(filename)
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
         else:
             parts = self.path.split('/')
             bucket = parts[0]
@@ -325,8 +342,11 @@ class MyServer(BaseHTTPRequestHandler):
         directory = None
         filename = None
         if self.use_local_filesystem:
-            filename = "." + self.path
-            self.send_local_response(filename)
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
         else:
             parts = self.path.split('/')
             bucket = parts[0]
@@ -339,8 +359,11 @@ class MyServer(BaseHTTPRequestHandler):
         directory = None
         filename = None
         if self.use_local_filesystem:
-            filename = "." + self.path
-            self.send_local_response(filename)
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
         else:
             parts = self.path.split('/')
             bucket = parts[0]
@@ -353,8 +376,11 @@ class MyServer(BaseHTTPRequestHandler):
         directory = None
         filename = None
         if self.use_local_filesystem:
-            filename = "." + self.path
-            self.send_local_response(filename)
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
         else:
             parts = self.path.split('/')
             bucket = parts[0]
