@@ -17,7 +17,7 @@ pip3 install 'apache-beam[test]'
 pip3 install 'apache-beam[docs]'
 
 python3 hw7.py \
-    --input gs://ds561-tigeryi-hw7/files/ \
+    --input gs://ds561-tigeryi-hw7/files/*.html \
     --output gs://ds561-tigeryi-hw7/output/result.txt \
     --runner DataflowRunner \
     --project feisty-gasket-398719 \
