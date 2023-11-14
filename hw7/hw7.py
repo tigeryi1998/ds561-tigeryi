@@ -75,7 +75,7 @@ def main(argv=None, save_main_session=True):
   pipeline_options.view_as(SetupOptions).save_main_session = save_main_session
 
   # The pipeline will be run on exiting the with block.
-  with beam.Pipeline(options=pipeline_options) as p:
+  with beam.Pipeline(options=pipeline_options) as pipeline:
     
     files_path = known_args.input
     list_files = list_of_blobs()
@@ -83,24 +83,36 @@ def main(argv=None, save_main_session=True):
     # Read the text file[pattern] into a PCollection.
     # lines = p | ReadFromTextWithFilename(known_args.input)
     
-    result = (
-        p | 'Create' >> beam.Create(list_files)
-          | 'Read each file content' >> beam.ParDo(ReadFileContent())
+    ind_lst = (
+        pipeline | 'Create' >> beam.Create(list_files)
+        | 'Read each file content' >> beam.ParDo(ReadFileContent())
     )
 
+    big_dict = {}
+
     # Format the counts into a PCollection of strings.
-    def format_result(result):
-      (ind, lst) = result
+    def format_result(ind_lst):
+      (ind, lst) = ind_lst
       diction = {}
       diction[ind] = lst 
+      big_dict[ind] = lst
       return diction
 
-    output = result | 'Format' >> beam.Map(format_result)
+    output = ind_lst | 'Format' >> beam.Map(format_result)
 
     # Write the output using a "Write" transform that has side effects.
     # pylint: disable=expression-not-assigned
     output | WriteToText(known_args.output)
+    
 
+    # Run the pipeline
+    result = pipeline.run()
+
+    # lets wait until result a available
+    result.wait_until_finish()
+
+    # print the output
+    print(big_dict)
 
 if __name__ == '__main__':
   logging.getLogger().setLevel(logging.INFO)
