@@ -88,6 +88,7 @@ def main(argv=None, save_main_session=True):
         | 'Read each file content' >> beam.ParDo(ReadFileContent())
     )
 
+    # create a global dictionary to print
     big_dict = {}
 
     # Format the counts into a PCollection of strings.
