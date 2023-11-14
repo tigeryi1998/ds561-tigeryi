@@ -173,6 +173,10 @@ files/
 
 DS_561-HW_2.pdf 
 
+wordcount.py
+
+wordcount_minimal.py
+
 generate-content.py 
 
 pagerank.py 
