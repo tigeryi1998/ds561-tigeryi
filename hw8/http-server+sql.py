@@ -229,8 +229,8 @@ class MySqlServer():
 
 
 # hw8-vm2
-# "projects/feisty-gasket-398719/zones/us-east1-c"
-# "projects/feisty-gasket-398719/zones/us-east1-d"
+# "projects/946005535036/zones/us-east1-c"
+# "projects/946005535036/zones/us-east1-d"
 
 class MyServer(BaseHTTPRequestHandler):
     use_local_filesystem = True    
@@ -501,7 +501,7 @@ def main():
     parser.add_argument("-p", "--port", help="Server Port", type=int, default=8080)
     parser.add_argument("-l", "--local", help="Use local filesystem for data source", action="store_true")
     parser.add_argument("-s", "--sql", help="Whether to connect to the SQL server", action="store_true")
-    parser.add_argument("-z", "--zone", help="the zone of the web server", type=str, default="projects/feisty-gasket-398719/zones/us-east1-c")
+    parser.add_argument("-z", "--zone", help="the zone of the web server", type=str, default="projects/946005535036/zones/us-east1-c")
     args = parser.parse_args()
     
     if not args.local:
