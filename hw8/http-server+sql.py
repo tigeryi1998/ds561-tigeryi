@@ -15,7 +15,7 @@ import socket, struct
 import sqlalchemy
 
 import numpy as np
-
+import requests
 
 PROJECT_ID = "feisty-gasket-398719"
 TOPIC_ID = "my-topic"
@@ -226,10 +226,19 @@ class MySqlServer():
     def long2ip(self, long):
         return socket.inet_ntoa(struct.pack('!L', long))
 
-        
+
+
+# hw8-vm2
+# "projects/feisty-gasket-398719/zones/us-east1-c"
+# "projects/feisty-gasket-398719/zones/us-east1-d"
+
 class MyServer(BaseHTTPRequestHandler):
     use_local_filesystem = True    
     sqlserver = None
+    zone = None
+
+    if not use_local_filesystem:
+        zone = requests.get("http://metadata/computeMetadata/v1/instance/zone", headers={'Metadata-Flavor': 'Google'}).text
     
     def publish_pub_sub(self, message):
         project_id = PROJECT_ID # 'cloudcomputingcourse-380619'
@@ -336,6 +345,11 @@ class MyServer(BaseHTTPRequestHandler):
                 for key in receive_headers:
                     self.wfile.write(bytes("Got header ", "utf-8"))
                     self.wfile.write(bytes('{}:{}\n'.format(key,receive_headers[key]), "utf-8"))
+
+                # response header
+                self.wfile.write(bytes("Response header ", "utf-8"))
+                self.wfile.write(bytes('zone: {}\n'.format(self.zone), "utf-8"))
+
                 self.wfile.write(bytes("</body></html>", "utf-8"))
                 content = f.read()
                 self.wfile.write(bytes(content, "utf-8"))
@@ -377,6 +391,11 @@ class MyServer(BaseHTTPRequestHandler):
                 for key in receive_headers:
                     self.wfile.write(bytes("Got header ", "utf-8"))
                     self.wfile.write(bytes('{}:{}\n'.format(key,receive_headers[key]), "utf-8"))
+
+                # response header
+                self.wfile.write(bytes("Response header ", "utf-8"))
+                self.wfile.write(bytes('zone: {}\n'.format(self.zone), "utf-8"))
+
                 self.wfile.write(bytes("</body></html>", "utf-8"))
                 content = f.read()
                 self.wfile.write(bytes(content, "utf-8"))
@@ -481,17 +500,24 @@ def main():
     parser.add_argument("-d", "--domain", help="Domain to make requests to", type=str, default="localhost")
     parser.add_argument("-p", "--port", help="Server Port", type=int, default=8080)
     parser.add_argument("-l", "--local", help="Use local filesystem for data source", action="store_true")
+    parser.add_argument("-s", "--sql", help="Whether to connect to the SQL server", action="store_true")
+    parser.add_argument("-z", "--zone", help="the zone of the web server", type=str, default="projects/feisty-gasket-398719/zones/us-east1-c")
     args = parser.parse_args()
     
     if not args.local:
         MyServer.use_local_filesystem = False
 
-    sqlserver= MySqlServer()
-    sqlserver.pool = sqlserver.connect_with_connector()
-    sqlserver.create_table1()
-    sqlserver.create_table2()
-    sqlserver.create_table3()
-    MyServer.sqlserver = sqlserver
+    if not args.sql:
+        MyServer.sqlserver = None
+    else:
+        sqlserver= MySqlServer()
+        sqlserver.pool = sqlserver.connect_with_connector()
+        sqlserver.create_table1()
+        sqlserver.create_table2()
+        sqlserver.create_table3()
+        MyServer.sqlserver = sqlserver
+
+    MyServer.zone = args.zone
     
     webServer = HTTPServer((args.domain, args.port), MyServer)
     print("Server started http://%s:%s" % (args.domain, args.port)) # http://%s:%s:%s # ,args.local
