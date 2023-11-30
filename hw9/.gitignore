@@ -176,3 +176,13 @@ app1.py
 app2.py 
 
 app3.py
+
+# VSCODE
+.vscode/ 
+
+
+Dockerfile2
+
+screenshot/
+
+flask.py

@@ -14,11 +14,11 @@ from google.cloud.sql.connector import Connector, IPTypes
 import pymysql
 import socket, struct
 import sqlalchemy
-
 import numpy as np
 import requests
 
 PROJECT_ID = "feisty-gasket-398719"
+PROJECT_NUM = "946005535036"
 TOPIC_ID = "my-topic"
 SUBSCRIPTION_NAME = "my-topic-sub"
 INSTANCE_CONNECTION_NAME = "feisty-gasket-398719:us-east1:instance-tigeryi"
@@ -75,6 +75,8 @@ list_of_genders = np.array(['Male', 'Female'])
 list_of_ages = np.array(['0-16', '17-25', '26-35', '36-45', '46-55', '56-65', '66-75', '76+'])
 list_of_incomes =  np.array(['0-10k', '10k-20k', '20k-40k', '40k-60k', '60k-100k', '100k-150k', '150k-250k', '250k+']
 )
+
+# SQL
 
 class MySqlServer():
     pool = None
@@ -233,13 +235,23 @@ class MySqlServer():
 # "projects/946005535036/zones/us-east1-c"
 # "projects/946005535036/zones/us-east1-d"
 
+
+
+# Web Server
+
 class MyServer(BaseHTTPRequestHandler):
     use_local_filesystem = True    
     sqlserver = None
     zone = None
+    logger = None
 
-    #if not use_local_filesystem:
+    #if not self.use_local_filesystem:
     #    zone = requests.get("http://metadata/computeMetadata/v1/instance/zone", headers={'Metadata-Flavor': 'Google'}).text
+
+    # cloud logging client
+    logging_client = logging.Client(project=PROJECT_ID)
+    logging_client.setup_logging()
+    logger = logging_client.logger("log_hw9")
     
     def publish_pub_sub(self, message):
         project_id = PROJECT_ID # 'cloudcomputingcourse-380619'
@@ -254,10 +266,13 @@ class MyServer(BaseHTTPRequestHandler):
         country = self.headers['X-Country']
         if country in BANNED_COUNTRIES:
             if not self.use_local_filesystem:
-                pass
-                #publish_pub_sub('Banned country ' + country)
+                # pass
+                self.publish_pub_sub('Banned country ' + country)
             else:
                 print('Banned country ', country)
+                # pub
+                self.publish_pub_sub('Banned country ' + country)
+        
         ip = self.headers['X-Client-IP']
         bucket = None
         directory = None
@@ -360,6 +375,8 @@ class MyServer(BaseHTTPRequestHandler):
                 self.writeintodb(receive_headers, filename, error=None)
 
         except:
+            self.logger.log_text("404 File Not Find")
+
             self.send_response(404)
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -406,6 +423,8 @@ class MyServer(BaseHTTPRequestHandler):
                 self.writeintodb(receive_headers, filename, error=None)
 
         except:
+            self.logger.log_text("404 File Not Find")
+
             self.send_response(404)
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -487,15 +506,85 @@ class MyServer(BaseHTTPRequestHandler):
             filename = parts[2]
         self.send500error(filename)
 
+    def do_CONNECT(self):
+        bucket = None
+        directory = None
+        filename = None
+        if self.use_local_filesystem:
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        else:
+            parts = self.path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        self.send500error(filename)
+
+    def do_OPTIONS(self):
+        bucket = None
+        directory = None
+        filename = None
+        if self.use_local_filesystem:
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        else:
+            parts = self.path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        self.send500error(filename)
+
+    def do_TRACE(self):
+        bucket = None
+        directory = None
+        filename = None
+        if self.use_local_filesystem:
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        else:
+            parts = self.path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        self.send500error(filename)
+
+    def do_PATCH(self):
+        bucket = None
+        directory = None
+        filename = None
+        if self.use_local_filesystem:
+            path = "." + self.path
+            parts = path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        else:
+            parts = self.path.split('/')
+            bucket = parts[0]
+            directory = parts[1]
+            filename = parts[2]
+        self.send500error(filename)
+    
     def send500error(self, filename=None):
-        self.send_response(500)
+        self.logger.log_text("501 Method Not Implemented")
+
+        self.send_response(501) # 500
         self.end_headers()
         self.wfile.write(bytes("Server method unavailable", "utf-8"))
 
         # Write a log of the request into the database
         receive_headers = self.headers
         if self.sqlserver != None: 
-            self.writeintodb(receive_headers, filename, error=500)
+            self.writeintodb(receive_headers, filename, error=501) # 500
 
                     
 def main():

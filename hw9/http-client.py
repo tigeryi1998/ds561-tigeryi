@@ -131,7 +131,7 @@ def build_headers(country, ip):
     headers.update({'X-time':time_str})
     return headers
 
-def make_request(domain, port, country, ip, filename, use_ssl, ssl_context, follow, verbose):
+def make_request(domain, port, country, ip, filename, use_ssl, ssl_context, follow, verbose, method):
     if verbose:
         print("Requesting ", filename, " from ", domain, port)
     conn = None
@@ -141,7 +141,7 @@ def make_request(domain, port, country, ip, filename, use_ssl, ssl_context, foll
         conn = http.client.HTTPConnection(domain, port)
 
     headers = build_headers(country, ip)
-    conn.request("GET", filename, headers=headers)
+    conn.request(method, filename, headers=headers) # "GET"
     res = conn.getresponse()
     data = res.read()
     if verbose:
@@ -169,6 +169,7 @@ def main():
     parser.add_argument("-s", "--ssl", help="Use HTTPS", action="store_true")
     parser.add_argument("-v", "--verbose", help="Print the responses from the server on stdout", action="store_true")
     parser.add_argument("-r", "--random", help="Initial random seed", type=int, default=0)
+    parser.add_argument("-m", "--method", help="HTML method", type=str, default="GET")
     args = parser.parse_args()
     if args.random != 0:
         random.seed(args.random)
@@ -188,7 +189,7 @@ def main():
         # If using the default port but have enabled ssl change the default port to be that of SSL
         if args.ssl and args.port==80:
             args.port=443
-        make_request(args.domain, args.port, country, ip, filename, args.ssl, ssl_context, args.follow, args.verbose)
+        make_request(args.domain, args.port, country, ip, filename, args.ssl, ssl_context, args.follow, args.verbose, args.method)
 
 if __name__ == "__main__":
     main()

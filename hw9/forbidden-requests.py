@@ -1,9 +1,14 @@
 from google.cloud import pubsub_v1
 
+PROJECT_ID = "feisty-gasket-398719"
+TOPIC_ID = "my-topic"
+SUBSCRIPTION_NAME = "my-topic-sub"
+
 # listen for banned countries
 subscriber = pubsub_v1.SubscriberClient()
 
-subscription_path = subscriber.subscription_path('ds561-trial-project', 'banned-countries-sub')
+
+subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_NAME)
 
 def callback(message):
   print('Received message: {}'.format(message.data.decode('utf-8')))
