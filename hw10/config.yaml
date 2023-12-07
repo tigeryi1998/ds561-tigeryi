@@ -1,0 +1,33 @@
+imports:
+- path: vm-template.py
+- path: network-template.py
+- path: firewall-template.py
+- path: compute-engine-template.py
+- path: sqladmin.py
+
+resources:
+- name: compute-engine-setup
+  type: compute-engine-template.py
+  
+  properties:
+    zone: us-east1-b
+    startup-script: |
+      #!/bin/bash
+
+      if [-d "/home/tigeryi/hw10"]; then
+        echo "hw10 exist" 
+      else
+        gsutil -m cp -r gs://ds561-tigeryi-hw10 /home/tigeryi/hw10/ 
+      fi
+
+      cd /home/tigeryi/hw10
+      apt install python3-pip -y
+      python3 -m pip install -r requirements.txt
+
+      python3 http-server+sql.py -s
+      python3 forbidden-requests.py
+
+      python3 http-client.py -d '127.0.0.1' -b 'ds561-tigeryi-hw10' -w files -i 11000 -n 20 -p 8080 -r 0 -f -m 'GET'
+      python3 http-client.py -d '127.0.0.1' -b 'ds561-tigeryi-hw10' -w files -i 11000 -n 5 -p 8080 -r 0 -f -m 'POST'
+      python3 http-client.py -d '127.0.0.1' -b 'ds561-tigeryi-hw10' -w files -i 11000 -n 5 -p 8080 -r 0 -f -m 'PUT'
+      
